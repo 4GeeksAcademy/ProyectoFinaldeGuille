@@ -12,7 +12,7 @@ export const EditProfile = () => {
     latitude: "",
     longitude: ""
   });
-  const [loading, setLoading] = useState(true);
+  // const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   const token = localStorage.getItem("token");
@@ -50,6 +50,7 @@ export const EditProfile = () => {
         },
         body: JSON.stringify(formData),
       });
+
       if (!resp.ok) throw new Error("Error subida perfil");
       navigate("/profile");
     } catch (err) {
@@ -62,6 +63,7 @@ export const EditProfile = () => {
       <div className="d-flex justify-content-center align-items-center vh-100">
         <Spinner animation="border" variant="dark" />
       </div>
+      
     );
 
   return (
