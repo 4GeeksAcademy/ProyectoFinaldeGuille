@@ -10,7 +10,7 @@ export const deleteUser = async (body) => {
     const data = await response.json();
     
     
-    return console.log(data)
+    return data
   } catch (error) {
     console.log(error)
   }

@@ -344,6 +344,15 @@ def edit_user(user_id):
         if gender not in ('male', 'female', 'other'):
             return jsonify({'msg': "Género inválido (usa 'male' | 'female' | 'other')"}), 400
         user.gender = gender
+        
+        
+    if 'bio' in body:
+        bio = str(body['bio']).strip()
+        if len(bio) < 2:
+            return jsonify({'msg': 'La bio debe tener al menos 2 caracteres'}), 400
+        user.biography = bio
+        
+    
 
     db.session.commit()
     return jsonify({'msg': 'Usuario actualizado correctamente', 'user': user.serialize()}), 200

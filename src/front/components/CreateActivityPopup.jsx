@@ -99,6 +99,17 @@ export const CreateActivityPopup = ({ show, handleClose, onActivityCreated }) =>
               required
             />
           </Form.Group>
+          <Form.Group className="mb-3">
+            <Form.Label>Máximo de participantes</Form.Label>
+            <Form.Control
+              type="text"
+              name="location"
+              placeholder="Ej: Parque del Retiro, Madrid"
+              value={formData.location}
+              onChange={handleChange}
+              required
+            />
+          </Form.Group>
 
           {error && <p className="text-danger">{error}</p>}
           <div className="d-flex justify-content-end">
