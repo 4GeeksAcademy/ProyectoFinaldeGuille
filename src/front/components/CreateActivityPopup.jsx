@@ -1,14 +1,18 @@
 import React, { useState } from "react";
 import { Modal, Button, Form, Spinner } from "react-bootstrap";
+import { sports } from "../jsApiComponents/sports"
 
-export const CreateActivityPopup = ({ show, handleClose, onActivityCreated, coordinates }) => {
+export const CreateActivityPopup = ({ show, handleClose, onActivityCreated, coordinates, loadActivity }) => {
+
+
+
   const [formData, setFormData] = useState({
     name: "",
     sport: "",
     description: "",
     max_participants: "",
     date: "",
-    
+
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -88,14 +92,14 @@ export const CreateActivityPopup = ({ show, handleClose, onActivityCreated, coor
 
           <Form.Group className="mb-3">
             <Form.Label>Deporte</Form.Label>
-            <Form.Control
-              type="text"
+            <Form.Select
               name="sport"
-              placeholder="Ej: Running, Ciclismo, Yoga..."
               value={formData.sport}
               onChange={handleChange}
               required
-            />
+            >
+              {sports.map((s) => (<option key={s} value={s}>{s}</option>))}
+            </Form.Select>
           </Form.Group>
 
           <Form.Group className="mb-3">
@@ -138,7 +142,7 @@ export const CreateActivityPopup = ({ show, handleClose, onActivityCreated, coor
             </div>
 
           </Form.Group>
-          
+
 
           {error && <p className="text-danger">{error}</p>}
           <div className="d-flex justify-content-end">
