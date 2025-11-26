@@ -203,8 +203,6 @@ def serve_any_other_file(path):
     response.cache_control.max_age = 0  # avoid cache memory
     return response
 
-# Endpoint: prueba envio correo -------------------------------
-
 
 @app.route("/test-email")
 def test_email():
