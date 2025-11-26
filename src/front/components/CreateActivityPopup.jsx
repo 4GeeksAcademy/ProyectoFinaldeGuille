@@ -33,6 +33,8 @@ export const CreateActivityPopup = ({ show, onActivityCreated, coordinates }) =>
   };
 
   const handleSubmit = async (e) => {
+    console.log("Request body:", bodyWithCoords);
+
     e.preventDefault();
     setLoading(true);
     setError("");
@@ -149,7 +151,7 @@ export const CreateActivityPopup = ({ show, onActivityCreated, coordinates }) =>
 
         {error && <p className="text-danger w-100 text-center">{error}</p>}
 
-        <div className="newsletter-form mt-3 w-100 d-flex justify-content-center">
+        <div className="newsletter-form mt-4 w-100 d-flex justify-content-center">
           <button type="submit" disabled={loading || !coordinates} className="neon-create-btn">
             {loading ? <Spinner size="sm" /> : "Crear actividad"}
           </button>
