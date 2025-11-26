@@ -4,41 +4,64 @@ import React, { useEffect, useState } from "react";
 import { GoogleMap, Marker, InfoWindow, useJsApiLoader } from "@react-google-maps/api";
 import { Spinner, Button } from "react-bootstrap";
 import { CreateActivityPopup } from "../components/CreateActivityPopup";
-import { Eventos } from "../components/Eventos";
+import { user } from "../jsApiComponents/user";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 export const MapView = () => {
   const [activities, setActivities] = useState([]);
   const [selected, setSelected] = useState(null);
-  const [showPopup, setShowPopup] = useState(false);
   const [newMarker, setNewMarker] = useState(null);
   const [currentPosition, setCurrentPosition] = useState({ lat: 40.4168, lng: -3.7038 });
   const [userLocation, setUserLocation] = useState(null);
-
-  const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-  });
-
-  const fetchActivities = async () => {
-    const resp = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/activities`);
-    const data = await resp.json();
-    setActivities(data);
-  };
-
-  useEffect(() => {
-    fetchActivities();
-  }, []);
+  const navigate = useNavigate();
 
   const handleMarkerClick = (e) => {
-    setShowPopup(true);
     setNewMarker({
       latitude: e.latLng.lat(),
       longitude: e.latLng.lng(),
     });
   };
 
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+  });
+
+  const fetchActivities = async () => {
+    try {
+      const resp = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/activities`);
+      const data = await resp.json();
+      setActivities(data);
+    } catch (error) {
+      toast.error("❌ Error cargando actividades");
+    }
+  };
+
+  const getUser = async () => {
+    try {
+      const response = await user();
+
+      if (response.ok) return; // 👍 Usuario correcto
+
+      if (response.status === 401) {
+        toast.warning("⚠️ Tu sesión ha caducado");
+        localStorage.removeItem("JWT-STORAGE-KEY");
+        return navigate("/login");
+      }
+
+    } catch (error) {
+      toast.error("❌ Error obteniendo datos de usuario");
+    }
+  };
+
+  useEffect(() => {
+    getUser();
+    fetchActivities();
+  }, []);
+
   const handleGetUserLocation = () => {
     if (!navigator.geolocation) {
-      alert("Tu navegador no permite geolocalización.");
+      toast.error("❌ Tu navegador no permite geolocalización");
       return;
     }
 
@@ -48,11 +71,12 @@ export const MapView = () => {
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
         };
-
         setUserLocation(userPos);
         setCurrentPosition(userPos);
       },
-      () => alert("Activa la geolocalización."),
+      () => {
+        toast.error("⚠️ No pudimos acceder a tu ubicación");
+      },
       { enableHighAccuracy: true }
     );
   };
@@ -60,36 +84,37 @@ export const MapView = () => {
   if (!isLoaded)
     return (
       <div className="d-flex justify-content-center align-items-center vh-100">
-        <Spinner animation="border" variant="dark" />
+        <Spinner animation="border" variant="light" />
       </div>
     );
 
   return (
     <>
-      {/* GÓRNY UKŁAD – FORMULARZ LEWO, MAPA PRAWO */}
-      <div className="row text-center gx-3 gy-4">
+      <div className="row g-0 text-center w-100 m-0">
 
-        <div
-          className="col-12 col-lg-6 position-relative mt-4"
-          style={{ height: "80vh", overflowY: "auto" }}
-        >
-          <Eventos />
+        {/* 📌 FORMULARIO */}
+        <div className="col-12 col-xl-6 d-flex justify-content-center align-items-center p-0">
+          <div className="w-100 p-3" style={{ maxWidth: "700px", margin: "0 auto" }}>
+            <CreateActivityPopup
+              show={true}
+              coordinates={newMarker}
+              onActivityCreated={fetchActivities}
+            />
+          </div>
         </div>
 
-        <div
-          className="col-12 col-lg-6 position-relative"
-          style={{
-            height: "80vh",
-            padding: "10px",
-            border: "2px solid #EE6C4D",
-            borderTop: "6px solid #E3FE18",
-            boxShadow: "0 5px 15px #817DF9",
-            borderRadius: "8px",
-            overflow: "hidden",
-          }}
-        >
+        {/* 🗺️ MAPA */}
+        <div className="col-12 col-xl-6 d-flex justify-content-center align-items-center p-3">
           <GoogleMap
-            mapContainerStyle={{ width: "100%", height: "100%" }}
+            mapContainerStyle={{
+              width: "100%",
+              height: "70vh",
+              minHeight: "350px",
+              borderRadius: "20px",
+              border: "2px solid #EE6C4D",
+              borderTop: "6px solid #E3FE18",
+              boxShadow: "0 5px 15px #817DF9",
+            }}
             center={currentPosition}
             zoom={12}
             onClick={handleMarkerClick}
@@ -112,6 +137,12 @@ export const MapView = () => {
             {newMarker && (
               <Marker
                 position={{ lat: newMarker.latitude, lng: newMarker.longitude }}
+                onClick={() =>
+                  setCurrentPosition({
+                    lat: newMarker.latitude,
+                    lng: newMarker.longitude,
+                  })
+                }
               />
             )}
 
@@ -122,8 +153,19 @@ export const MapView = () => {
               />
             )}
 
+            <Button
+              variant="primary"
+              className="position-absolute"
+              style={{ top: "10px", right: "60px", zIndex: 10 }}
+              onClick={handleGetUserLocation}
+            >
+              📍 Mi ubicación
+            </Button>
+
             {selected && (
               <InfoWindow
+                key={selected.name}
+                options={{ zIndex: 10 }}
                 position={{ lat: selected.latitude, lng: selected.longitude }}
                 onCloseClick={() => setSelected(null)}
               >
@@ -131,72 +173,54 @@ export const MapView = () => {
                   <h6>{selected.name}</h6>
                   <p>{selected.sport}</p>
                   <small>{new Date(selected.date).toLocaleString()}</small>
+                  <p className="text-muted">{selected.location}</p>
+                  <p><strong>Título:</strong> {selected.title}</p>
+                  <p><strong>Creado por:</strong> {selected.creator_name}</p>
+                  <p><strong>Descripción:</strong> {selected.description}</p>
+                  <p><strong>Participantes:</strong> {selected.participants}</p>
                 </div>
               </InfoWindow>
             )}
           </GoogleMap>
-
-          <Button
-            variant="dark"
-            className="position-absolute"
-            style={{ bottom: "20px", right: "70px", zIndex: 10, padding: "20px" }}
-            onClick={() => setShowPopup(true)}
-          >
-            Crear actividad deportiva
-          </Button>
-
-          {showPopup && (
-            <CreateActivityPopup
-              show={showPopup}
-              handleClose={() => setShowPopup(false)}
-              coordinates={newMarker}
-              onActivityCreated={() => {
-                fetchActivities();
-                setShowPopup(false);
-              }}
-            />
-          )}
         </div>
-      </div>
+
+        <hr style={{ border: "1px solid #817DF9", margin: "40px 0" }} />
 
 
+        <div
+          className="container mt-5 mb-5 actividades-box"
+        >
+          <h3 className="text-center fw-bold mb-3 actividades-title">
+            Actividades a las que quizá quieras unirte
+          </h3>
 
+          <div className="event-scroll-wrapper">
+            <div className="event-scroll-container">
+              {activities.length === 0 ? (
+                <div className="text-muted">No hay actividades todavía.</div>
+              ) : (
+                activities.slice(0, 10).map((ev) => (
+                  <div key={ev.id} className="event-card-scroll">
+                    <h5>{ev.title}</h5>
+                    <p className="text-muted">{ev.sport}</p>
+                    <p style={{ fontSize: "0.9rem" }}>
+                      {ev.description?.slice(0, 60)}...
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
 
-      <hr style={{ border: "1px solid #817DF9", margin: "40px 0" }} />
-
-
-      <div
-        className="container mt-5 mb-5 actividades-box"
-      >
-        <h3 className="text-center fw-bold mb-3 actividades-title">
-          Actividades a las que quizá quieras unirte
-        </h3>
-
-        <div className="event-scroll-wrapper">
-          <div className="event-scroll-container">
-            {activities.length === 0 ? (
-              <div className="text-muted">No hay actividades todavía.</div>
-            ) : (
-              activities.slice(0, 10).map((ev) => (
-                <div key={ev.id} className="event-card-scroll">
-                  <h5>{ev.title}</h5>
-                  <p className="text-muted">{ev.sport}</p>
-                  <p style={{ fontSize: "0.9rem" }}>
-                    {ev.description?.slice(0, 60)}...
-                  </p>
-                </div>
-              ))
-            )}
+          <div className="text-center mt-3">
+            <a href="/events" className="btn btn-dark px-4 py-2">
+              Ver todos los eventos →
+            </a>
           </div>
         </div>
 
-        <div className="text-center mt-3">
-          <a href="/events" className="btn btn-dark px-4 py-2">
-            Ver todos los eventos →
-          </a>
-        </div>
-      </div>
-
+  
+        </div> 
     </>
   );
 };
