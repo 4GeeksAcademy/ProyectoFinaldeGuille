@@ -27,6 +27,8 @@ export const CreateActivityPopup = ({ show, onActivityCreated, coordinates }) =>
       description: "",
       max_participants: "",
       date: "",
+      latitude: "",
+      longitude: "",
     });
   };
 
@@ -68,7 +70,7 @@ export const CreateActivityPopup = ({ show, onActivityCreated, coordinates }) =>
       const data = await resp.json();
       onActivityCreated(data);
       toast.success("🎉 Actividad creada correctamente!");
-
+      
       window.dispatchEvent(new Event("activities-updated"));
       resetForm();
 
@@ -139,7 +141,7 @@ export const CreateActivityPopup = ({ show, onActivityCreated, coordinates }) =>
           />
         </Form.Group>
 
-        <div className="p-2 bg-secondary rounded text-light mb-2 w-100 text-center">
+        <div className="p-2 bg-transparent rounded text-light mb-2 w-100 text-center">
           {coordinates
             ? `📍 Lat: ${coordinates.latitude.toFixed(5)}, Lng: ${coordinates.longitude.toFixed(5)}`
             : "Haz clic en el mapa para marcar la ubicación"}
@@ -156,3 +158,4 @@ export const CreateActivityPopup = ({ show, onActivityCreated, coordinates }) =>
     </div>
   );
 };
+
